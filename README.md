@@ -1,10 +1,10 @@
-# Search engine for the yeastgenome.org website.
+# Search engine for the yeastgenome.org website.
 
-# Dependancies :
+## Dependancies :
    - Pyhton 3
    - requests
    - re
    - argparse
 
-# How to use ? 
+## How to use ? 
    - seriously ? :p
