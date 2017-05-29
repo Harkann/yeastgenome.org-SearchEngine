@@ -16,14 +16,14 @@ overview_titles = [
 	"Feature Type",
 	"Description",
 	"Name Description",
-	"@", #il faut un symbole en plus qui n'est pas dans le texte pour finir la recherche (c'est sale)
+	"", #il faut un symbole en plus qui n'est pas dans le texte pour finir la recherche (c'est sale)
 	]
 
 go_titles = [
 	"Molecular Function",
 	"Biological Process",
 	"Cellular Component",
-	"@",
+	"",
 	]
 
 
@@ -67,9 +67,8 @@ def write_to_file(overview,protein,go):
 	if args.file :
 		file = open(args.file+".csv","a")
 		for i in overview:
-			if i != "@" :
-				file.write(i)
-				file.write(",")
+			file.write(i)
+			file.write(",")
 
 		for i in go:
 			if type(i)== list :
@@ -78,8 +77,7 @@ def write_to_file(overview,protein,go):
 						file.write(j)
 						file.write("$")
 			else :
-				if i != "@" :
-					file.write(i)
+				file.write(i)
 			file.write(",")
 		file.write("\n")
 		file.close()
@@ -157,7 +155,6 @@ def parse_and_request(ORF):
 			[]] #cellular component
 		is_precedent = False
 		for a, title in enumerate(go_titles) :
-			
 			try :
 				while go_copy[0] != title :
 					if is_precedent :
@@ -169,7 +166,7 @@ def parse_and_request(ORF):
 				go = copy.deepcopy(go_copy)
 				is_precedent = True
 			except :
-				print("Va niquer ta mère")
+				print("Pas d'infos sur :",title)
 				go_clean[a].append("")
 				go_copy = copy.deepcopy(go)
 				is_precedent = False
@@ -231,7 +228,7 @@ if args.input :
 	preced_input = None
 	for orf_input in list_input :
 		print(count_input,"(",count_errors,")","/",total_input)
-		if count_input >= args.rank:
+		if args.rank == None or count_input >= args.rank:
 			if orf_input != preced_input:
 				result=parse_and_request(orf_input)
 				if result != None:
