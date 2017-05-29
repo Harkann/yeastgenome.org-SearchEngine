@@ -198,6 +198,7 @@ parser.add_argument('-y','--yeastgenome',help='Make the request on yeastgenome.o
 parser.add_argument('-o','--orf', help='ORF', type=str)
 parser.add_argument('-f','--file',help='Write the output of the script to the selected file', type=str)
 parser.add_argument('-i','--input',help='Get the ORF from a csv input file', type=str)
+parser.add_argument('-r','--rank',help='Set the starting rank', type=int)
 args = parser.parse_args()
 
 
@@ -208,19 +209,22 @@ if args.input :
 	count_input=1
 	list_input = open_parse_input(args.input)
 	total_input = len(list_input)
-	init_file()
+	if args.rank :
+		pass
+	else :
+		init_file()
 	preced_input = None
 	for orf_input in list_input :
 		print(count_input,"/",total_input)
-		if orf_input != preced_input:
-			result=parse_and_request(orf_input)
-			if result != None:
-				overview,protein,go = result
-				write_to_file(overview,protein,go)
-				
-			else :
-				print("Erreur sur : ",orf_input)
-			count_input+=1
-			preced_input = orf_input
+		if count_input >= args.rank:
+			if orf_input != preced_input:
+				result=parse_and_request(orf_input)
+				if result != None:
+					overview,protein,go = result
+					write_to_file(overview,protein,go)
+				else :
+					print("Erreur sur : ",orf_input)
+		count_input+=1
+		preced_input = orf_input
 
 			
