@@ -41,7 +41,10 @@ def get_info(texte):
 	cleantext = re.sub(cleanr, '$$$$$', texte)
 	list_info = cleantext.split('$$$$$')
 	list_info.pop(0)
-	list_info.pop(-1)
+	try :
+		list_info.pop(-1)
+	except :
+		return None
 	return list_info
 
 def open_parse_input(i_file):
@@ -50,7 +53,6 @@ def open_parse_input(i_file):
 	for line in file :
 		if line != "":
 			list_input.append(line.split("\n")[0])
-	print(list_input)
 	return list_input
 
 
@@ -85,6 +87,8 @@ def makerequest(ORF):
 def parse_and_request(ORF):
 	if args.yeastgenome :
 		infos_list = get_info(cleanspace(makerequest(ORF)))
+		if infos_list == None:
+			return None
 		i = 0
 		#overview section 
 		overview = infos_list[0]
@@ -95,7 +99,6 @@ def parse_and_request(ORF):
 		for title in overview_titles :
 			try :
 				while overview_copy[i] != title :
-					print(overview_copy[i])
 					if is_precedent :
 						# on vire les ; et les , parceque c'est relou dans les CSV ...
 						overview_clean.append((overview_copy.pop(0)).replace(",","$").replace(";","$"))
@@ -109,7 +112,6 @@ def parse_and_request(ORF):
 				overview_clean.append("")
 				overview_copy = copy.deepcopy(overview)
 				is_precedent = False
-		print(overview_clean)
 
 		#sequence section
 		sequence = infos_list[1]
@@ -124,12 +126,10 @@ def parse_and_request(ORF):
 			protein[10],	#mol. weigth (Da)
 			protein[12],	#isoelectric point
 		]
-		print(protein_clean)
 
 		#go section
 		go = infos_list[3]
 		go = go.split('\n')
-		print(go)
 		go_copy = copy.deepcopy(go)
 		go_clean = [
 			[],
@@ -138,8 +138,6 @@ def parse_and_request(ORF):
 			[]] #cellular component
 		is_precedent = False
 		for a, title in enumerate(go_titles) :
-			print(a)
-			print(title)
 			
 			try :
 				while go_copy[i] != title :
@@ -156,14 +154,12 @@ def parse_and_request(ORF):
 				go_clean.append("")
 				go_copy = copy.deepcopy(go)
 				is_precedent = False
-		print(go_clean)
 
 		#pathway section
 		pathway = infos_list[4]
 		#phenotype section
 		phenotype = infos_list[5]
 		phenotype = phenotype.split('\n')
-		print(phenotype)
 		
 		#interaction section
 		interaction = infos_list[6]
@@ -211,7 +207,14 @@ if args.input :
 	for orf_input in list_input :
 		print(count_input,"/",total_input)
 		if orf_input != preced_input:
-			overview,protein,go=parse_and_request(orf_input)
-			write_to_file(overview,protein,go)
+			result=parse_and_request(orf_input)
+			if result != None:
+				overview,protein,go = result
+				write_to_file(overview,protein,go)
+				
+			else :
+				print("Erreur sur : ",orf_input)
 			count_input+=1
 			preced_input = orf_input
+
+			
