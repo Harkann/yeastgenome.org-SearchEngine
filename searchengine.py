@@ -121,12 +121,13 @@ def parse_and_request(ORF):
 		#protein section
 		protein = infos_list[2]
 		protein = protein.split('\n')
+		"""
 		protein_clean = [
 			protein[8],	 #length (a.a.)
 			protein[10],	#mol. weigth (Da)
 			protein[12],	#isoelectric point
 		]
-
+		"""
 		#go section
 		go = infos_list[3]
 		go = go.split('\n')
