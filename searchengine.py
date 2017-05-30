@@ -110,11 +110,9 @@ def write_to_file(overview,protein,go):
 		file = open(args.file+".csv","a")
 		for i in overview:
 			file.write(i)
-			print(i)
 			file.write(",")
 
 		for i in go:
-			print(i)
 			if type(i)== list :
 				if i != []:
 					for j in i :
