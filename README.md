@@ -7,4 +7,4 @@
    - argparse
 
 ## How to use ? 
-   - seriously ? :p
+   - ``` ./searchengine --help ```
