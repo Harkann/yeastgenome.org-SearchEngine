@@ -5,6 +5,8 @@
    - requests
    - re
    - argparse
+   - copy
+   - html.entities
 
 ## How to use ? 
    - ``` ./searchengine --help ```
