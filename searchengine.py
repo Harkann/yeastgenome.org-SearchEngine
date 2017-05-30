@@ -4,6 +4,7 @@ import requests
 import re
 import argparse
 import copy
+import html.entities
 ##########################################
 # Titres des parties pour parser la page #
 ##########################################
@@ -26,7 +27,41 @@ go_titles = [
 	"",
 	]
 
+########################### Convertit les codes HTML en symboles unicode #############################
+html_pattern = re.compile("&([^;]+);")
+ 
+def html_entity_decode_char(m):
+	try:
+		return html.entities.entitydefs[m.group(1)]
+	except KeyError:
+		return m.group(0)
+ 
+def html_entity_decode(string):
+	def sub(item):
+		word = item.group(1)
+		if len(word)>= 2 and word[0] == '#':
+			try:
+				if word[1] in ['x', 'X']:
+					return chr(int(word[2:], 16))
+				else:
+					return chr(int(word[1:]))
+			except ValueError:
+				return item.group(0)
+		elif word[0] != '#':
+			return html_entity_decode_char(item)
+		else:
+			return item.group(0)
+	return html_pattern.sub(sub, string)
+######################################################################
+# Code d'origine en python2.7 par Nit (porté en pyhton3 par Mikachu) #
+######################################################################
+#########################################################################################################
 
+def cleanparenthesis(text):
+	''' vire les infos entre parenthèses (exemple : (IDA))'''
+	cleanr = re.compile('\(?[A-Z]{2,3}(\,|\))')
+	cleantext = re.sub(cleanr,'',text)
+	return cleantext
 
 def cleanhtml(raw_html):
 	'''transforme le html en texte'''
@@ -61,6 +96,13 @@ def open_parse_input(i_file):
 			list_input.append(line.split("\n")[0])
 	return list_input
 
+def write_to_file_text(string):
+	'''ecrit la string + \n dans le fichier '''
+	if args.file :
+		file = open(args.file+".csv","a")
+		file.write(string)
+		file.write("\n")
+		file.close()
 
 def write_to_file(overview,protein,go):
 	'''Écrit dans le fichier de sortie'''
@@ -68,24 +110,28 @@ def write_to_file(overview,protein,go):
 		file = open(args.file+".csv","a")
 		for i in overview:
 			file.write(i)
+			print(i)
 			file.write(",")
 
 		for i in go:
+			print(i)
 			if type(i)== list :
 				if i != []:
 					for j in i :
-						file.write(j)
-						file.write("$")
+						if j != "":
+							file.write(j)
+							file.write(" ")
+					file.write(",")
 			else :
 				file.write(i)
-			file.write(",")
+				file.write(",")
 		file.write("\n")
 		file.close()
 
 def init_file():
 	'''Initialise le fichier de sortie avec les titres'''
-	write_to_file(overview_titles,[],go_titles)
-
+	write_to_file_text("sep=,")
+	write_to_file(overview_titles[0:-2],[],go_titles[0:-2])
 
 def makerequest(ORF):
 	''' envoie la requete et retourne le contenu html de la page'''
@@ -112,7 +158,7 @@ def parse_and_request(ORF):
 				while overview_copy[0] != title :
 					if is_precedent :
 						# on vire les ; et les , parce-que c'est relou dans les CSV ...
-						overview_clean.append((overview_copy.pop(0)).replace(",","$").replace(";","$"))
+						overview_clean.append((cleanparenthesis(html_entity_decode(overview_copy.pop(0)))).replace(",","").replace(";"," $"))
 						is_precedent = False
 					else :
 						overview_copy.pop(0)
@@ -133,17 +179,10 @@ def parse_and_request(ORF):
 		protein = infos_list[2]
 		protein = protein.split('\n')
 		protein_clean = [
-			[],
-			[],
-			[],
+			[],	#length (a.a.)
+			[],	#mol. weigth (Da)
+			[],	#isoelectric point
 		]
-		"""
-		protein_clean = [
-			protein[8],	 #length (a.a.)
-			protein[10],	#mol. weigth (Da)
-			protein[12],	#isoelectric point
-		]
-		"""
 		#go section
 		go = infos_list[3]
 		go = go.split('\n')
@@ -152,14 +191,15 @@ def parse_and_request(ORF):
 			[],
 			[], #molecular function
 			[], #biological process
-			[]] #cellular component
+			[],	#cellular component
+		] 
 		is_precedent = False
 		for a, title in enumerate(go_titles) :
 			try :
 				while go_copy[0] != title :
 					if is_precedent :
 						# on vire les ; et les , parce que c'est relou dans les CSV ...
-						go_clean[a].append((go_copy.pop(0)).replace(",","$").replace(";","$").replace("Manually Curated",""))
+						go_clean[a].append((cleanparenthesis(html_entity_decode(go_copy.pop(0)))).replace(","," $").replace(";","PVIRG").replace("Manually Curated",""))
 					else :
 						go_copy.pop(0)
 				go_copy.pop(0)
@@ -175,8 +215,6 @@ def parse_and_request(ORF):
 		pathway = infos_list[4]
 		#phenotype section
 		phenotype = infos_list[5]
-		phenotype = phenotype.split('\n')
-		
 		#interaction section
 		interaction = infos_list[6]
 		#regulation section
@@ -194,14 +232,7 @@ def parse_and_request(ORF):
 	return overview_clean,protein_clean,go_clean
 
 
-
-#
-#
-#
-#
-#
-
-
+############## Là on récupère les arguments passés au script ###################
 
 parser = argparse.ArgumentParser(description='Search for the specified ORF on the yeastgenome.org database')
 parser.add_argument('-y','--yeastgenome',help='Make the request on yeastgenome.org', action='store_true')
@@ -211,6 +242,7 @@ parser.add_argument('-i','--input',help='Get the ORF from a csv input file', typ
 parser.add_argument('-r','--rank',help='Set the starting rank', type=int)
 args = parser.parse_args()
 
+############## Et là on réagi en fonction de ces arguments #####################
 
 if args.orf :
 	parse_and_request(args.orf)
@@ -239,6 +271,4 @@ if args.input :
 					list_erreurs.append(orf_input)
 					count_errors+=1
 		count_input+=1
-		preced_input = orf_input
-
-			
+		preced_input = orf_input		
